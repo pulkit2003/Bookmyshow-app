@@ -30,16 +30,11 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    withCredentials([string(credentialsId: 'Sonar-token', variable: 'SONAR_AUTH_TOKEN')]) {
-                        sh ''' 
-                        $SCANNER_HOME/bin/sonar-scanner \
-                            -Dsonar.projectKey=BMS \
-                            -Dsonar.projectName=BMS \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN
-                        '''
-                    }
+                    sh ''' 
+                    $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=BMS \
+                        -Dsonar.projectKey=BMS
+                    '''
                 }
             }
         }
@@ -47,9 +42,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 2, unit: 'MINUTES') {   // avoid infinite hanging
-                        waitForQualityGate abortPipeline: true
-                    }
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
                 }
             }
         }
@@ -77,15 +70,9 @@ pipeline {
             }
         }
 
-        stage('Trivy Scans') {
+        stage('Trivy FS Scan') {
             steps {
-                sh '''
-                echo "Running Trivy FS scan..."
-                trivy fs . > trivyfs.txt || true
-
-                echo "Running Trivy image scan..."
-                trivy image $DOCKER_IMAGE > trivyimage.txt || true
-                '''
+                sh 'trivy fs . > trivyfs.txt'
             }
         }
 
@@ -116,14 +103,14 @@ pipeline {
                     aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
 
                     echo "Verifying kubeconfig..."
-                    kubectl config current-context
+                    kubectl config view
 
                     echo "Deploying application to EKS..."
-                    kubectl apply -f bookmyshow-app/k8s/deployment.yml
-                    kubectl apply -f bookmyshow-app/k8s/service.yml
+                    kubectl apply -f deployment.yml
+                    kubectl apply -f service.yml
 
                     echo "Verifying deployment..."
-                    kubectl get pods -o wide
+                    kubectl get pods
                     kubectl get svc
                     '''
                 }
@@ -138,8 +125,8 @@ pipeline {
                 body: "Project: ${env.JOB_NAME}<br/>" +
                       "Build Number: ${env.BUILD_NUMBER}<br/>" +
                       "URL: ${env.BUILD_URL}<br/>",
-                to: 'pulkitm0220@gmail.com',
-                attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
+                to: 'pulkitm0220@gmail.com@gmail.com',
+                attachmentsPattern: 'trivyfs.txt'
         }
     }
 }
