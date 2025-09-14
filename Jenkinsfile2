@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        DOCKER_IMAGE = 'pulkirm2003/bms:latest'
+        DOCKER_IMAGE = 'pulkitm2003/bms:latest'
         EKS_CLUSTER_NAME = 'Pulkit-eks'
         AWS_REGION = 'ap-south-1'
     }
