@@ -1,3 +1,4 @@
+#All this Code will get triggered by the Jenkins files and will create a Docker image on Your Docker Hub
 # Use Node.js 18 (or your Jenkins-configured version)
 FROM node:18
 
